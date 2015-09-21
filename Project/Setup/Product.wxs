@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Binginator" Language="1033" Version="1.0.0.0" Manufacturer="Binginator" UpgradeCode="a94ded77-f99f-44da-8dcb-aa67ccc257f0">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perUser" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="Setup" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="DesktopShortcutComponents" />
+      <ComponentGroupRef Id="StartShortcutComponents" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="DesktopFolder" />
+      <Directory Id="StartMenuFolder" />
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="InstallFolder" Name="Binginator" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="InstallFolder">
+      <Component Id="exeFile" Guid="{7EB61895-28A1-4FE7-B31D-3675D64FB13F}">
+        <File Id="exeFile" Source="$(var.Binginator.TargetPath)" />
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes"/>
+        <RemoveFolder Id="InstallFolder" On="uninstall" />
+      </Component>
+      <Component Id="chromedriverFile" Guid="{7AFAB036-39A0-46AF-99AC-405C9415D32C}">
+        <File Id="chromedriverFile" Source="redist\chromedriver.exe" />
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="DesktopShortcutComponents" Directory="DesktopFolder">
+      <Component Id="desktopShortcutFile" Guid="{03486418-26B9-4C7E-9D17-18BFB20C744F}">
+        <Shortcut Id="desktopShortcutFile" Name="Binginator" Target="[!exeFile]" WorkingDirectory="InstallFolder" />
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="StartShortcutComponents" Directory="StartMenuFolder">
+      <Component Id="startShortcutFile" Guid="{7CE21310-66AA-46C8-945C-4FF88055EE1F}">
+        <Shortcut Id="startShortcutFile" Name="Binginator" Target="[!exeFile]" WorkingDirectory="InstallFolder" />
+        <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
