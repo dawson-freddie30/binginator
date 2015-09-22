@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="Binginator" Language="1033" Version="1.0.0.0" Manufacturer="Binginator" UpgradeCode="a94ded77-f99f-44da-8dcb-aa67ccc257f0">
-    <Package InstallerVersion="200" Compressed="yes" InstallScope="perUser" />
+  <Product Id="*" Name="Binginator" Language="1033" Version="!(bind.FileVersion.exeFile)" Manufacturer="Binginator" UpgradeCode="a94ded77-f99f-44da-8dcb-aa67ccc257f0">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perUser" Comments="!(bind.FileVersion.exeFile)" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
@@ -11,6 +11,11 @@
       <ComponentGroupRef Id="DesktopShortcutComponents" />
       <ComponentGroupRef Id="StartShortcutComponents" />
     </Feature>
+
+    <CustomAction Id="LaunchFile" FileKey="exeFile" ExeCommand="" Return="asyncNoWait" />
+    <InstallExecuteSequence>
+      <Custom Action="LaunchFile" After="InstallFinalize">LAUNCH = 1 and NOT Installed</Custom>
+    </InstallExecuteSequence>
   </Product>
 
   <Fragment>

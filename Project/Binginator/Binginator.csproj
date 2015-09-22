@@ -40,6 +40,9 @@
   <PropertyGroup>
     <StartupObject>Binginator.App</StartupObject>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Assets\1442915402_Bing.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -129,6 +132,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Embedded\WebDriver.dll" />
     <EmbeddedResource Include="Embedded\WebDriver.Support.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\1442915402_Bing.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

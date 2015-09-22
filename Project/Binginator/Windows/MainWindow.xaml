@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Binginator"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="652.871" Closed="Window_Closed">
+        Title="MainWindow" Height="350" Width="652.871" Closed="Window_Closed" Icon="/Binginator;component/Assets/1442915402_Bing.ico">
     <Grid>
         <Button Content="Launch Mobile" HorizontalAlignment="Left" Margin="20,20,0,0" VerticalAlignment="Top" Width="104" Command="{Binding LaunchMobileCommand}"/>
         <Button Content="Launch Desktop" HorizontalAlignment="Left" Margin="20,45,0,0" VerticalAlignment="Top" Width="104" Command="{Binding LaunchDesktopCommand}"/>
