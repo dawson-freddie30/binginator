@@ -5,13 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Binginator"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="652.871" Closed="Window_Closed" Icon="/Binginator;component/Assets/1442915402_Bing.ico">
+        Title="Binginator" Height="350" Width="800" Closed="Window_Closed" Icon="/Binginator;component/Assets/1442915402_Bing.ico">
     <Grid>
-        <Button Content="Launch Mobile" HorizontalAlignment="Left" Margin="20,20,0,0" VerticalAlignment="Top" Width="104" Command="{Binding LaunchMobileCommand}"/>
-        <Button Content="Launch Desktop" HorizontalAlignment="Left" Margin="20,45,0,0" VerticalAlignment="Top" Width="104" Command="{Binding LaunchDesktopCommand}"/>
+        <Button Content="Launch Mobile" HorizontalAlignment="Left" Margin="20,44,0,0" VerticalAlignment="Top" Width="104" Command="{Binding LaunchMobileCommand}"/>
+        <Button Content="Launch Desktop" HorizontalAlignment="Left" Margin="20,19,0,0" VerticalAlignment="Top" Width="104" Command="{Binding LaunchDesktopCommand}"/>
 
 
-        <GroupBox x:Name="groupBox" Header="GroupBox" HorizontalAlignment="Left" Height="110" Margin="205,10,0,0" VerticalAlignment="Top" Width="149">
+        <GroupBox x:Name="groupBox" Header="Searches" HorizontalAlignment="Left" Height="110" Margin="206,10,0,0" VerticalAlignment="Top" Width="149">
             <Grid>
                 <Label Content="Mobile" HorizontalAlignment="Left" Margin="0,8,0,0" VerticalAlignment="Top"/>
                 <TextBox HorizontalAlignment="Left" Height="23" Margin="60,8,0,0" TextWrapping="Wrap" Text="{Binding MobileSearches}" VerticalAlignment="Top" Width="32"/>
@@ -21,8 +21,8 @@
                 <Button Content="Search!" HorizontalAlignment="Left" Margin="23,65,0,0" VerticalAlignment="Top" Width="104" Command="{Binding SearchCommand}"/>
             </Grid>
         </GroupBox>
-        <Button Content="Reset Profile" HorizontalAlignment="Left" Margin="20,72,0,0" VerticalAlignment="Top" Width="97" Command="{Binding ResetProfileCommand}"/>
-        <RichTextBox Name="RichTextBoxLog" HorizontalAlignment="Left" Height="172" Margin="10,137,0,0" VerticalAlignment="Top" Width="625" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Courier New">
+        <Button Content="Reset Profile" HorizontalAlignment="Left" Margin="20,78,0,0" VerticalAlignment="Top" Width="97" Command="{Binding ResetProfileCommand}"/>
+        <RichTextBox Name="RichTextBoxLog" Margin="10,137,10,10" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Courier New">
             <RichTextBox.Resources>
                 <Style TargetType="{x:Type Paragraph}">
                     <Setter Property="Margin" Value="0" />
