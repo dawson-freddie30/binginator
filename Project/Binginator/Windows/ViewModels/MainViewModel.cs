@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Windows.Media;
 using Binginator.Classes;
@@ -21,7 +22,7 @@ namespace Binginator.Windows.ViewModels {
         }
 
         internal void Quit() {
-            _model.Quit();
+            _model.Quit(true);
         }
 
         private RelayCommand _LaunchMobileCommand;
@@ -32,7 +33,9 @@ namespace Binginator.Windows.ViewModels {
                         () => {
                             LogUpdate("LaunchMobileCommand", Colors.DarkSlateGray);
 
-                            _model.Launch(true);
+                            var bw = new BackgroundWorker();
+                            bw.DoWork += (sender, e) => { _model.Launch(true); };
+                            bw.RunWorkerAsync();
                         }
                     ));
             }
@@ -46,7 +49,9 @@ namespace Binginator.Windows.ViewModels {
                         () => {
                             LogUpdate("LaunchDesktopCommand", Colors.DarkSlateGray);
 
-                            _model.Launch(false);
+                            var bw = new BackgroundWorker();
+                            bw.DoWork += (sender, e) => { _model.Launch(false); };
+                            bw.RunWorkerAsync();
                         }
                     ));
             }
@@ -57,17 +62,12 @@ namespace Binginator.Windows.ViewModels {
             get {
                 return _SearchCommand ?? (
                     _SearchCommand = new RelayCommand(
-                        async () => {
+                        () => {
                             LogUpdate("SearchCommand", Colors.DarkSlateGray);
 
-                            _model.Prepare();
-                            try {
-                                await _model.SearchMobile();
-                                await _model.SearchDesktop();
-                            }
-                            catch (Exception ex) {
-                                LogUpdate("WHAT THE HELL CHROMEDRIVER?! " + ex.Message, Colors.Red);
-                            }
+                            var bw = new BackgroundWorker();
+                            bw.DoWork += (sender, e) => { _model.Search(); };
+                            bw.RunWorkerAsync();
                         }
                     ));
             }
@@ -90,7 +90,7 @@ namespace Binginator.Windows.ViewModels {
 
         public void LogUpdate(string data, Color color, bool inline = false) {
             if (LogUpdated != null)
-                LogUpdated(this, new LogUpdatedEventArgs(data, color, inline));
+                App.InvokeIfRequired(() => LogUpdated(this, new LogUpdatedEventArgs(data, color, inline)));
         }
     }
 }

@@ -14,6 +14,7 @@ namespace Binginator {
     // icon from https://www.iconfinder.com/icons/670456/bing_communication_media_question_search_social_icon#size=64
     public partial class App : Application {
         public static string Folder = AppDomain.CurrentDomain.BaseDirectory;
+
         private void _Startup(object sender, StartupEventArgs e) {
             if (!File.Exists(Path.Combine(App.Folder, "chromedriver.exe")))
                 new MsgWindow("Unable to locate required files. Reinstall this program.").ShowDialog();
@@ -66,6 +67,13 @@ namespace Binginator {
 
         private static Stream _getEmbedded(string name) {
             return Assembly.GetExecutingAssembly().GetManifestResourceStream("Binginator.Embedded." + name);
+        }
+
+        public static void InvokeIfRequired(Action action) {
+            if (!Current.Dispatcher.CheckAccess())
+                Current.Dispatcher.Invoke(action);
+            else
+                action();
         }
     }
 }
