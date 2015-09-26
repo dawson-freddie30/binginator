@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Reflection;
 using System.Windows;
 using Binginator.Windows;
@@ -19,20 +18,21 @@ namespace Binginator {
             if (!File.Exists(Path.Combine(App.Folder, "chromedriver.exe")))
                 new MsgWindow("Unable to locate required files. Reinstall this program.").ShowDialog();
             else {
+                string latest = null;
+#if !DEBUG
                 ShutdownMode = ShutdownMode.OnExplicitShutdown;
-
                 MsgWindow msgWindow = new MsgWindow("Checking for an update...");
                 msgWindow.Show();
 
-                string latest = null;
                 try {
-                    latest = new WebClient().DownloadString("https://raw.githubusercontent.com/dawson-freddie30/binginator/release/latest").TrimEnd(new char[] { '\r', '\n' });
+                    latest = new System.Net.WebClient().DownloadString("https://raw.githubusercontent.com/dawson-freddie30/binginator/release/latest").TrimEnd(new char[] { '\r', '\n' });
                 }
-                catch (WebException ex) {
+                catch (System.Net.WebException ex) {
                     new MsgWindow("Update checking failed." + Environment.NewLine + Environment.NewLine + ex.Message).ShowDialog();
                 }
 
                 msgWindow.Close();
+#endif
 
                 string current = "v" + new Version(FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVer‌​sion).ToString(2);
                 if (latest != null && current != latest) {

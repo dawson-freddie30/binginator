@@ -8,12 +8,10 @@ using Binginator.Windows.ViewModels;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
-using OpenQA.Selenium.Support.UI;
 
 namespace Binginator.Models {
     public class MainModel {
         private IWebDriver _driver = null;
-        private WebDriverWait _wait;
         private Actions _builder;
         private MainViewModel _viewModel;
         private List<string> _searches;
@@ -46,7 +44,6 @@ namespace Binginator.Models {
             _driver = new ChromeDriver(service, options);
             _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(3));
 
-            _wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(3));
             _builder = new Actions(_driver);
 
             LogUpdate("Launching Chrome " + (mobile ? "Mobile" : "Desktop"), Colors.Blue);
@@ -60,31 +57,33 @@ namespace Binginator.Models {
             Quit();
 
             Directory.Delete("profile", true);
+            LogUpdate("deleted chrome profile", Colors.Blue);
         }
 
         internal async void Search() {
             _searches = new List<string>();
             _random = new Random();
+            _cancel = false;
+
+            try {
+                await _offers();
+            }
+            catch (Exception ex) {
+                LogUpdate("_offers() - CHROMEDRIVER crashed " + ex.Message, Colors.Red);
+            }
 
             try {
                 await _searchMobile();
             }
             catch (Exception ex) {
-                LogUpdate("WHAT THE HELL CHROMEDRIVER?! " + ex.Message, Colors.Red);
+                LogUpdate("_searchMobile() - CHROMEDRIVER crashed " + ex.Message, Colors.Red);
             }
 
             try {
                 await _searchDesktop();
             }
             catch (Exception ex) {
-                LogUpdate("WHAT THE HELL CHROMEDRIVER?! " + ex.Message, Colors.Red);
-            }
-
-            try {
-                await _offers();
-            }
-            catch (Exception ex) {
-                LogUpdate("WHAT THE HELL CHROMEDRIVER?! " + ex.Message, Colors.Red);
+                LogUpdate("_searchDesktop() - CHROMEDRIVER crashed " + ex.Message, Colors.Red);
             }
         }
 
@@ -116,25 +115,16 @@ namespace Binginator.Models {
             if (_cancel)
                 return;
 
-            _neededSearches = _viewModel.MobileSearches;
+            _neededSearches = _viewModel.MobileCredits * 2;
             _count = 0;
 
             Launch(true);
 
-            await Task.Delay(1000);
-            IWebElement rewardsId = _getElementWait(By.Id("id_rwds_b"));
-
-            if (rewardsId == null)
-                LogUpdate("timeout :(", Colors.Red);
-            else if (rewardsId.GetAttribute("href") == "https://www.bing.com/rewards/dashboard") {
-                await _search(
-                    "//div[@id='hc_popnow']//a[@href[contains(.,'&FORM=HPNN01')]]",
-                    "//div[@id='elst']//h2/a",
-                    "//ol[@id='b_results']//div[@class='b_rs']/h2[text()='Related searches']/following-sibling::*//a[@href[contains(.,'&FORM=QSRE')]]"
-                    );
-            }
-            else
-                LogUpdate("log in plz", Colors.Red);
+            await _search(
+                "//div[@id='hc_popnow']//a[@href[contains(.,'&FORM=HPNN01')]]",
+                "//div[@id='elst']//h2/a",
+                "//ol[@id='b_results']//div[@class='b_rs']/h2[text()='Related searches']/following-sibling::*//a[@href[contains(.,'&FORM=QSRE')]]"
+                );
 
             Quit();
         }
@@ -145,31 +135,28 @@ namespace Binginator.Models {
             if (_cancel)
                 return;
 
-            _neededSearches = _viewModel.DesktopSearches;
+            _neededSearches = _viewModel.DesktopCredits * 2;
             _count = 0;
 
             Launch(false);
 
-            await Task.Delay(1000);
-            IWebElement name = _getElementWait(By.Id("id_n"));
-
-            if (name == null)
-                LogUpdate("timeout :(", Colors.Red);
-            else if (name.Displayed) {
-                await _search(
-                    "//ul[@id='crs_pane']//a[@href[contains(.,'&FORM=HPNN01')]]",
-                    "//div[contains(concat(' ',@class,' '),' mcd ')]//h4/a",
-                    "//ol[@id='b_context']//h2[text()='Related searches']/following-sibling::ul//a[@href[contains(.,'&FORM=R5FD')]]"
-                    );
-            }
-            else
-                LogUpdate("log in plz", Colors.Red);
+            await _search(
+                "//ul[@id='crs_pane']//a[@href[contains(.,'&FORM=HPNN01')]]",
+                "//div[contains(concat(' ',@class,' '),' mcd ')]//h4/a",
+                "//ol[@id='b_context']//h2[text()='Related searches']/following-sibling::ul//a[@href[contains(.,'&FORM=R5FD')]]"
+                );
 
             Quit();
         }
 
         private async Task _search(string news, string random, string related) {
+            if (_neededSearches == 0 || _neededSearches > 100) {
+                LogUpdate("needed searches wrong", Colors.Red);
+                return;
+            }
+
             LogUpdate("opening new tabs for popular news topics", Colors.Blue);
+            await Task.Delay(1000);
 
             await _openNews(news);
             if (_count < _neededSearches && _count > 12) {
@@ -196,18 +183,22 @@ namespace Binginator.Models {
                         }
 
                         if (_random.Next(4) == 0) {
-                            _openRandom(random);
+                            if (_openRandom(random))
+                                await Task.Delay(_random.Next(1000, 5000));
+                            else
+                                LogUpdate("unable to locate a random result", Colors.Red);
                         }
 
                         if (_count < _neededSearches) { // first time here, might already have the amount
-                            _openRelated(related);
+                            if (_openRelated(related))
+                                await Task.Delay(_random.Next(1000, 5000));
+                            else {
+                                LogUpdate("no related searches; closing tab", Colors.Green);
+                                _driver.Close();
+                            }
                         }
-
-                        await Task.Delay(_random.Next(1000, 5000));
                     }
                 } while (_count < _neededSearches);
-
-            await Task.Delay(1000);
         }
 
         private async Task _openNews(string xpath) {
@@ -237,19 +228,20 @@ namespace Binginator.Models {
             }
         }
 
-        private void _openRandom(string xpath) {
+
+        private bool _openRandom(string xpath) {
             var elements = _getElements(By.XPath(xpath));
             if (elements.Count == 0)
-                LogUpdate("unable to locate a random result", Colors.Red);
-            else {
-                IWebElement element = elements[_random.Next(0, elements.Count)];
-                LogUpdate("open random result " + element.GetAttribute("href"), Colors.Black);
-                _builder.KeyDown(Keys.Control).Click(element).KeyUp(Keys.Control).Build().Perform();
-            }
+                return false;
+
+            IWebElement element = elements[_random.Next(0, elements.Count)];
+            LogUpdate("open random result " + element.GetAttribute("href"), Colors.Black);
+            _builder.KeyDown(Keys.Control).Click(element).KeyUp(Keys.Control).Build().Perform();
+
+            return true;
         }
 
-        private void _openRelated(string xpath) {
-            bool hadRelated = false;
+        private bool _openRelated(string xpath) {
             var elements = _getElements(By.XPath(xpath));
             if (elements.Count > 0) {
                 foreach (IWebElement element in elements) {
@@ -260,19 +252,15 @@ namespace Binginator.Models {
                         _count++;
                         LogUpdate("(" + _count + ") load " + href, Colors.Black);
 
-                        hadRelated = true;
                         element.Click();
-                        break;
+                        return true;
                     }
                     else
                         LogUpdate("already loaded " + href, Colors.LightGray);
                 }
             }
 
-            if (!hadRelated) {
-                LogUpdate("no related searches; closing tab", Colors.Green);
-                _driver.Close();
-            }
+            return false;
         }
 
         private async Task _offers() {
@@ -281,14 +269,14 @@ namespace Binginator.Models {
 
             Launch(false, "https://www.bing.com/rewards/dashboard");
 
+            LogUpdate("checking for offers", Colors.Blue);
             await Task.Delay(1000);
-            IWebElement name = _getElementWait(By.Id("id_n"));
 
-            if (name == null)
-                LogUpdate("timeout :(", Colors.Red);
-            else if (name.Displayed) {
-                LogUpdate("opening offers", Colors.Blue);
-
+            if (_getElement(By.XPath("//div[@class='simpleSignIn']")) != null) {
+                LogUpdate("SIGN IN TO BING", Colors.Red);
+                _cancel = true;
+            }
+            else {
                 List<string> offers = new List<string>();
 
                 while (true) {
@@ -315,8 +303,6 @@ namespace Binginator.Models {
                     }
                 }
             }
-            else
-                LogUpdate("log in plz", Colors.Red);
 
             Quit();
         }
@@ -340,21 +326,6 @@ namespace Binginator.Models {
                 return context.FindElements(by);
 
             return _driver.FindElements(by);
-        }
-
-        private IWebElement _getElementWait(By by) {
-            LogUpdate("_getElementWait " + by, Colors.Purple);
-            try {
-                return _wait.Until<IWebElement>((d) => {
-                    try {
-                        return d.FindElement(by);
-                    }
-                    catch (NoSuchElementException) { return null; }
-                });
-            }
-            catch (WebDriverTimeoutException) {
-                return null;
-            }
         }
     }
 }

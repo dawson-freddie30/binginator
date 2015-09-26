@@ -9,16 +9,16 @@ using Binginator.Models;
 namespace Binginator.Windows.ViewModels {
     public class MainViewModel {
         private MainModel _model;
-        public uint MobileSearches { get; set; }
-        public uint DesktopSearches { get; set; }
+        public uint MobileCredits { get; set; }
+        public uint DesktopCredits { get; set; }
         public event EventHandler<LogUpdatedEventArgs> LogUpdated;
 
         public MainViewModel(MainModel model) {
             _model = model;
             _model.SetViewModel(this);
 
-            MobileSearches = 20;
-            DesktopSearches = 30;
+            MobileCredits = 10;
+            DesktopCredits = 15;
         }
 
         internal void Quit() {
@@ -31,7 +31,7 @@ namespace Binginator.Windows.ViewModels {
                 return _LaunchMobileCommand ?? (
                     _LaunchMobileCommand = new RelayCommand(
                         () => {
-                            LogUpdate("LaunchMobileCommand", Colors.DarkSlateGray);
+                            //LogUpdate("LaunchMobileCommand", Colors.DarkSlateGray);
 
                             var bw = new BackgroundWorker();
                             bw.DoWork += (sender, e) => { _model.Launch(true); };
@@ -47,7 +47,7 @@ namespace Binginator.Windows.ViewModels {
                 return _LaunchDesktopCommand ?? (
                     _LaunchDesktopCommand = new RelayCommand(
                         () => {
-                            LogUpdate("LaunchDesktopCommand", Colors.DarkSlateGray);
+                            //LogUpdate("LaunchDesktopCommand", Colors.DarkSlateGray);
 
                             var bw = new BackgroundWorker();
                             bw.DoWork += (sender, e) => { _model.Launch(false); };
@@ -63,7 +63,7 @@ namespace Binginator.Windows.ViewModels {
                 return _SearchCommand ?? (
                     _SearchCommand = new RelayCommand(
                         () => {
-                            LogUpdate("SearchCommand", Colors.DarkSlateGray);
+                            //LogUpdate("SearchCommand", Colors.DarkSlateGray);
 
                             var bw = new BackgroundWorker();
                             bw.DoWork += (sender, e) => { _model.Search(); };
@@ -79,7 +79,7 @@ namespace Binginator.Windows.ViewModels {
                 return _ResetProfileCommand ?? (
                     _ResetProfileCommand = new RelayCommand(
                         () => {
-                            LogUpdate("ResetProfileCommand", Colors.DarkSlateGray);
+                            //LogUpdate("ResetProfileCommand", Colors.DarkSlateGray);
 
                             _model.ResetProfile();
                         },
