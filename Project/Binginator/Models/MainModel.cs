@@ -85,6 +85,11 @@ namespace Binginator.Models {
             catch (Exception ex) {
                 LogUpdate("_searchDesktop() - CHROMEDRIVER crashed " + ex.Message, Colors.Red);
             }
+
+            if (App.Arguments.ContainsKey("search")) {
+                Quit(true);
+                App.InvokeIfRequired(() => App.Current.Shutdown());
+            }
         }
 
         internal void Quit(bool cancel = false) {
@@ -294,7 +299,7 @@ namespace Binginator.Models {
                             offers.Add(title.Text);
                             LogUpdate("load offer " + title.Text, Colors.Black);
 
-                            element.Click();
+                            _builder.KeyDown(Keys.Control).Click(element).KeyUp(Keys.Control).Build().Perform();
                         }
                         else
                             LogUpdate("already loaded " + title.Text, Colors.LightGray);
@@ -313,7 +318,10 @@ namespace Binginator.Models {
                 if (context != null)
                     return context.FindElement(by);
 
-                return _driver.FindElement(by);
+                if (_driver != null)
+                    return _driver.FindElement(by);
+
+                return null;
             }
             catch (NoSuchElementException) {
                 return null;
@@ -325,7 +333,10 @@ namespace Binginator.Models {
             if (context != null)
                 return context.FindElements(by);
 
-            return _driver.FindElements(by);
+            if (_driver != null)
+                return _driver.FindElements(by);
+
+            return new ReadOnlyCollection<IWebElement>(null);
         }
     }
 }

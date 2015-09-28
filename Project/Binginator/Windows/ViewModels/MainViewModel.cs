@@ -1,21 +1,29 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using System.Security.Principal;
 using System.Windows.Media;
 using Binginator.Classes;
 using Binginator.Events;
 using Binginator.Models;
+using Microsoft.Win32.TaskScheduler;
 
 namespace Binginator.Windows.ViewModels {
     public class MainViewModel {
         private MainModel _model;
+        public event EventHandler<LogUpdatedEventArgs> LogUpdated;
         public uint MobileCredits { get; set; }
         public uint DesktopCredits { get; set; }
-        public event EventHandler<LogUpdatedEventArgs> LogUpdated;
+        public uint ScheduleStart { get; set; }
+        public uint ScheduleRandom { get; set; }
+
 
         public MainViewModel(MainModel model) {
             _model = model;
             _model.SetViewModel(this);
+
+            ScheduleStart = 13;
+            ScheduleRandom = 2;
 
             MobileCredits = _getSearchArgument("mobile", 10);
 
@@ -89,6 +97,74 @@ namespace Binginator.Windows.ViewModels {
                         },
                         () => { return Directory.Exists("profile"); }
                     ));
+            }
+        }
+
+        private bool? _TaskSchedulerChecked;
+        public bool TaskSchedulerChecked {
+            get {
+                if (_TaskSchedulerChecked == null) {
+                    LogUpdate("checking for scheduled task", Colors.LightGray);
+
+                    try {
+                        using (TaskService ts = new TaskService()) {
+                            _TaskSchedulerChecked = ts.FindTask("binginator_" + WindowsIdentity.GetCurrent().Name.Replace(@"\", "-")) != null;
+                        }
+                    }
+                    catch (Exception) {
+                        _TaskSchedulerChecked = false;
+                    }
+                }
+
+                return (bool)_TaskSchedulerChecked;
+            }
+            set {
+                _TaskSchedulerChecked = value;
+
+                string userName = WindowsIdentity.GetCurrent().Name;
+                string taskName = "binginator_" + userName.Replace(@"\", "-");
+
+                try {
+                    using (TaskService ts = new TaskService()) {
+                        if (value == true) {
+                            LogUpdate("add scheduled task", Colors.DarkSlateGray);
+
+                            bool v2 = ts.HighestSupportedVersion >= new Version(1, 2);
+                            TaskDefinition td = ts.NewTask();
+
+                            td.RegistrationInfo.Author = "Binginator";
+                            td.RegistrationInfo.Description = "Start Binginator as configured";
+
+                            td.Principal.UserId = userName;
+                            if (v2)
+                                td.Principal.LogonType = TaskLogonType.InteractiveToken;
+
+                            td.Settings.DisallowStartIfOnBatteries = false;
+                            td.Settings.ExecutionTimeLimit = TimeSpan.Zero;
+
+                            DailyTrigger trigger = new DailyTrigger();
+                            trigger.StartBoundary = DateTime.Today + TimeSpan.FromHours(ScheduleStart);
+                            trigger.DaysInterval = 1;
+                            if (v2)
+                                trigger.RandomDelay = TimeSpan.FromHours(ScheduleRandom);
+
+                            td.Triggers.Add(trigger);
+
+                            td.Actions.Add(new ExecAction(
+                                    '"' + Path.Combine(App.Folder, AppDomain.CurrentDomain.FriendlyName) + '"',
+                                    String.Format("--search --mobile={0} --desktop={1} ", MobileCredits, DesktopCredits),
+                                    App.Folder
+                                ));
+
+                            ts.RootFolder.RegisterTaskDefinition(taskName, td);
+                        }
+                        else {
+                            LogUpdate("remove scheduled task", Colors.DarkSlateGray);
+                            ts.RootFolder.DeleteTask(taskName);
+                        }
+                    }
+                }
+                catch (Exception) { }
             }
         }
 

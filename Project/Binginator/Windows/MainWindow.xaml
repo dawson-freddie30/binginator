@@ -8,10 +8,10 @@
         Title="Binginator" Height="450" Width="900" Closed="Window_Closed" Icon="/Binginator;component/Assets/1442915402_Bing.ico" WindowStartupLocation="CenterScreen">
     <Grid>
         <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Text="Enter the number of daily search credits:" />
-        <Label Content="Mobile" HorizontalAlignment="Left" Margin="19,31,0,0" VerticalAlignment="Top"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="71,34,0,0" TextWrapping="Wrap" Text="{Binding MobileCredits}" VerticalAlignment="Top" Width="32" VerticalContentAlignment="Center"/>
-        <Label Content="_Desktop" HorizontalAlignment="Left" Margin="121,31,0,0" VerticalAlignment="Top"/>
-        <TextBox HorizontalAlignment="Left" Height="23" Margin="180,34,0,0" TextWrapping="Wrap" Text="{Binding DesktopCredits}" VerticalAlignment="Top" Width="32" VerticalContentAlignment="Center"/>
+        <TextBlock Text="Mobile" HorizontalAlignment="Left" Margin="29,36,0,0" VerticalAlignment="Top"/>
+        <TextBox HorizontalAlignment="Left" Height="20" Margin="71,34,0,0" TextWrapping="Wrap" Text="{Binding MobileCredits}" VerticalAlignment="Top" Width="26" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+        <TextBlock Text="Desktop" HorizontalAlignment="Left" Margin="131,36,0,0" VerticalAlignment="Top"/>
+        <TextBox HorizontalAlignment="Left" Height="20" Margin="180,34,0,0" TextWrapping="Wrap" Text="{Binding DesktopCredits}" VerticalAlignment="Top" Width="26" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
         <Button Content="Search!" HorizontalAlignment="Left" Margin="86,66,0,0" VerticalAlignment="Top" Command="{Binding SearchCommand}" Padding="13,3"/>
 
         <TextBlock HorizontalAlignment="Left" Margin="328,9,0,0" VerticalAlignment="Top" Text="Use the custom Chrome to manage Bing:" />
@@ -24,6 +24,15 @@
         <TextBlock HorizontalAlignment="Left" Margin="328,72,0,0" VerticalAlignment="Top" FontStyle="Italic">
             <Hyperlink Command="{Binding ResetProfileCommand}">Reset Chrome Profile</Hyperlink>
         </TextBlock>
+
+        <TextBlock HorizontalAlignment="Left" Margin="633,10,0,0" VerticalAlignment="Top" Text="Automatically search:" />
+        <CheckBox HorizontalAlignment="Left" Margin="638,31,0,0" VerticalAlignment="Top" IsChecked="{Binding TaskSchedulerChecked}">
+            <TextBlock Text="Schedule Task" Margin="6,0,0,0" />
+        </CheckBox>
+        <TextBlock Text="Start Hour (24-hour time)" HorizontalAlignment="Left" Margin="664,53,0,0" VerticalAlignment="Top"/>
+        <TextBox HorizontalAlignment="Left" Height="20" Margin="633,51,0,0" TextWrapping="Wrap" Text="{Binding ScheduleStart}" VerticalAlignment="Top" Width="26" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+        <TextBlock Text="Random Delay (up to N Hours)" HorizontalAlignment="Left" Margin="664,77,0,0" VerticalAlignment="Top"/>
+        <TextBox HorizontalAlignment="Left" Height="20" Margin="633,76,0,0" TextWrapping="Wrap" Text="{Binding ScheduleRandom}" VerticalAlignment="Top" Width="26" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
 
         <RichTextBox Name="RichTextBoxLog" Margin="0,100,0,0" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Courier New">
             <RichTextBox.Resources>

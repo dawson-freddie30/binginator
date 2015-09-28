@@ -117,6 +117,9 @@ namespace Binginator {
         }
 
         public static void InvokeIfRequired(Action action) {
+            if (Current == null)
+                return;
+
             if (!Current.Dispatcher.CheckAccess())
                 Current.Dispatcher.Invoke(action);
             else
