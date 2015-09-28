@@ -17,8 +17,12 @@ namespace Binginator.Windows.ViewModels {
             _model = model;
             _model.SetViewModel(this);
 
-            MobileCredits = 10;
-            DesktopCredits = 15;
+            MobileCredits = _getSearchArgument("mobile", 10);
+
+            DesktopCredits = _getSearchArgument("desktop", 15);
+
+            if (App.Arguments.ContainsKey("search"))
+                SearchCommand.Execute(null);
         }
 
         internal void Quit() {
@@ -91,6 +95,14 @@ namespace Binginator.Windows.ViewModels {
         public void LogUpdate(string data, Color color, bool inline = false) {
             if (LogUpdated != null)
                 App.InvokeIfRequired(() => LogUpdated(this, new LogUpdatedEventArgs(data, color, inline)));
+        }
+
+        private uint _getSearchArgument(string type, uint def) {
+            uint value;
+            if (App.Arguments.ContainsKey(type) && uint.TryParse(App.Arguments[type], out value))
+                return value;
+
+            return def;
         }
     }
 }

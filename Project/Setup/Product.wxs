@@ -12,7 +12,7 @@
       <ComponentGroupRef Id="StartShortcutComponents" />
     </Feature>
 
-    <CustomAction Id="LaunchFile" FileKey="exeFile" ExeCommand="" Return="asyncNoWait" />
+    <CustomAction Id="LaunchFile" FileKey="exeFile" ExeCommand="[FLAGS]" Return="asyncNoWait" />
     <InstallExecuteSequence>
       <Custom Action="LaunchFile" After="InstallFinalize">LAUNCH = 1 and NOT Installed</Custom>
     </InstallExecuteSequence>
