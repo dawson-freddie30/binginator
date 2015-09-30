@@ -19,6 +19,7 @@ namespace Binginator.Windows {
 
             DataContext = _viewModel;
 
+            RichTextBoxLog.Document.Blocks.Clear();
             _viewModel.LogUpdated += DataContext_LogUpdated;
         }
 

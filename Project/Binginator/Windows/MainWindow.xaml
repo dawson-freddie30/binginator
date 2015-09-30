@@ -7,12 +7,7 @@
         mc:Ignorable="d"
         Title="Binginator" Height="450" Width="900" Closed="Window_Closed" Icon="/Binginator;component/Assets/1442915402_Bing.ico" WindowStartupLocation="CenterScreen">
     <Grid>
-        <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Text="Enter the number of daily search credits:" />
-        <TextBlock Text="Mobile" HorizontalAlignment="Left" Margin="29,36,0,0" VerticalAlignment="Top"/>
-        <TextBox HorizontalAlignment="Left" Height="20" Margin="71,34,0,0" TextWrapping="Wrap" Text="{Binding MobileCredits}" VerticalAlignment="Top" Width="26" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-        <TextBlock Text="Desktop" HorizontalAlignment="Left" Margin="131,36,0,0" VerticalAlignment="Top"/>
-        <TextBox HorizontalAlignment="Left" Height="20" Margin="180,34,0,0" TextWrapping="Wrap" Text="{Binding DesktopCredits}" VerticalAlignment="Top" Width="26" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-        <Button Content="Search!" HorizontalAlignment="Left" Margin="86,66,0,0" VerticalAlignment="Top" Command="{Binding SearchCommand}" Padding="13,3"/>
+        <Button Content="Search!" HorizontalAlignment="Left" Margin="56,26,0,0" VerticalAlignment="Top" Command="{Binding SearchCommand}" Padding="13,3"/>
 
         <TextBlock HorizontalAlignment="Left" Margin="328,9,0,0" VerticalAlignment="Top" Text="Use the custom Chrome to manage Bing:" />
         <TextBlock HorizontalAlignment="Left" Margin="328,51,0,0" VerticalAlignment="Top">

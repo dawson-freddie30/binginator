@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Media;
 using Binginator.Windows.ViewModels;
@@ -16,6 +17,8 @@ namespace Binginator.Models {
         private MainViewModel _viewModel;
         private List<string> _searches;
         private uint _neededSearches;
+        private uint _neededMobileSearches;
+        private uint _neededDesktopSearches;
         private int _count;
         private Random _random;
         private bool _cancel;
@@ -30,6 +33,7 @@ namespace Binginator.Models {
 
         internal void Launch(bool mobile, string url = "https://www.bing.com/") {
             Quit();
+            _viewModel.ResetProfileCommand.RaiseCanExecuteChanged();
 
             ChromeDriverService service = ChromeDriverService.CreateDefaultService(App.Folder);
             service.HideCommandPromptWindow = true;
@@ -46,7 +50,7 @@ namespace Binginator.Models {
 
             _builder = new Actions(_driver);
 
-            LogUpdate("Launching Chrome " + (mobile ? "Mobile" : "Desktop"), Colors.Blue);
+            LogUpdate("Launching Chrome " + (mobile ? "Mobile" : "Desktop"), Colors.CadetBlue);
 
             if (url != null)
                 _driver.Navigate().GoToUrl(url);
@@ -56,8 +60,9 @@ namespace Binginator.Models {
         internal void ResetProfile() {
             Quit();
 
-            Directory.Delete("profile", true);
-            LogUpdate("deleted chrome profile", Colors.Blue);
+            Directory.Delete(Path.Combine(App.Folder, "profile"), true);
+            _viewModel.ResetProfileCommand.RaiseCanExecuteChanged();
+            LogUpdate("deleted Chrome profile", Colors.Peru);
         }
 
         internal async void Search() {
@@ -69,27 +74,29 @@ namespace Binginator.Models {
                 await _offers();
             }
             catch (Exception ex) {
-                LogUpdate("_offers() - CHROMEDRIVER crashed " + ex.Message, Colors.Red);
+                LogUpdate("_offers() - crashed " + ex.Message, Colors.Red);
             }
 
             try {
                 await _searchMobile();
             }
             catch (Exception ex) {
-                LogUpdate("_searchMobile() - CHROMEDRIVER crashed " + ex.Message, Colors.Red);
+                LogUpdate("_searchMobile() - crashed " + ex.Message, Colors.Red);
             }
 
             try {
                 await _searchDesktop();
             }
             catch (Exception ex) {
-                LogUpdate("_searchDesktop() - CHROMEDRIVER crashed " + ex.Message, Colors.Red);
+                LogUpdate("_searchDesktop() - crashed " + ex.Message, Colors.Red);
             }
 
             if (App.Arguments.ContainsKey("search")) {
                 Quit(true);
                 App.InvokeIfRequired(() => App.Current.Shutdown());
             }
+            else
+                LogUpdate("Search() ended", Colors.Green);
         }
 
         internal void Quit(bool cancel = false) {
@@ -100,7 +107,7 @@ namespace Binginator.Models {
                 try {
                     var windows = _driver.WindowHandles;
                     if (windows.Count > 0) {
-                        LogUpdate("close opened tabs", Colors.SlateBlue);
+                        LogUpdate("(close opened tabs)", Colors.SlateBlue);
                         for (int i = 0; i < windows.Count; i++) {
                             _driver.SwitchTo().Window(windows[i]);
                             _driver.Close();
@@ -108,7 +115,7 @@ namespace Binginator.Models {
                     }
                 }
                 catch (InvalidOperationException) {
-                    LogUpdate("where did chrome go?", Colors.Red);
+                    //LogUpdate("where did chrome go?", Colors.Red);
                 }
 
                 _driver.Quit();
@@ -120,8 +127,10 @@ namespace Binginator.Models {
             if (_cancel)
                 return;
 
-            _neededSearches = _viewModel.MobileCredits * 2;
             _count = 0;
+
+            if ((_neededSearches = _neededMobileSearches) == 0)
+                return;
 
             Launch(true);
 
@@ -140,8 +149,10 @@ namespace Binginator.Models {
             if (_cancel)
                 return;
 
-            _neededSearches = _viewModel.DesktopCredits * 2;
             _count = 0;
+
+            if ((_neededSearches = _neededDesktopSearches) == 0)
+                return;
 
             Launch(false);
 
@@ -155,23 +166,19 @@ namespace Binginator.Models {
         }
 
         private async Task _search(string news, string random, string related) {
-            if (_neededSearches == 0 || _neededSearches > 100) {
-                LogUpdate("needed searches wrong", Colors.Red);
-                return;
-            }
-
-            LogUpdate("opening new tabs for popular news topics", Colors.Blue);
+            LogUpdate("Needed Searches: " + _neededSearches, Colors.SteelBlue);
             await Task.Delay(1000);
 
             await _openNews(news);
             if (_count < _neededSearches && _count > 12) {
-                LogUpdate("check news topics again", Colors.Orange);
+                LogUpdate("(check news again)", Colors.Blue);
+                await Task.Delay(1000);
                 await _openNews(news);
             }
 
             if (_count > 0)
                 do {
-                    LogUpdate("inside random/extra loop", Colors.Orange);
+                    LogUpdate("(inside random/related loop)", Colors.MediumSeaGreen);
 
                     var windows = _driver.WindowHandles;
                     if (windows.Count == 1) {
@@ -191,14 +198,14 @@ namespace Binginator.Models {
                             if (_openRandom(random))
                                 await Task.Delay(_random.Next(1000, 5000));
                             else
-                                LogUpdate("unable to locate a random result", Colors.Red);
+                                LogUpdate("couldnt find a random promoted article", Colors.PaleVioletRed);
                         }
 
                         if (_count < _neededSearches) { // first time here, might already have the amount
                             if (_openRelated(related))
                                 await Task.Delay(_random.Next(1000, 5000));
                             else {
-                                LogUpdate("no related searches; closing tab", Colors.Green);
+                                LogUpdate("no related searches; closing tab", Colors.DarkCyan);
                                 _driver.Close();
                             }
                         }
@@ -209,7 +216,7 @@ namespace Binginator.Models {
         private async Task _openNews(string xpath) {
             var elements = _getElements(By.XPath(xpath));
             if (elements.Count == 0)
-                LogUpdate("unable to find any", Colors.Red);
+                LogUpdate("unable to find any news", Colors.Salmon);
             else {
                 foreach (IWebElement element in elements) {
                     string href = element.GetAttribute("href");
@@ -218,7 +225,7 @@ namespace Binginator.Models {
                     if (!_searches.Contains(href)) {
                         _searches.Add(href);
                         _count++;
-                        LogUpdate("(" + _count + ") load " + href, Colors.Black);
+                        LogUpdate("(" + _count + ") load news " + href, Colors.MidnightBlue);
 
                         _builder.KeyDown(Keys.Control).Click(element).KeyUp(Keys.Control).Build().Perform();
 
@@ -240,7 +247,7 @@ namespace Binginator.Models {
                 return false;
 
             IWebElement element = elements[_random.Next(0, elements.Count)];
-            LogUpdate("open random result " + element.GetAttribute("href"), Colors.Black);
+            LogUpdate("open random " + element.GetAttribute("href"), Colors.DimGray);
             _builder.KeyDown(Keys.Control).Click(element).KeyUp(Keys.Control).Build().Perform();
 
             return true;
@@ -255,7 +262,7 @@ namespace Binginator.Models {
                     if (!_searches.Contains(href)) {
                         _searches.Add(href);
                         _count++;
-                        LogUpdate("(" + _count + ") load " + href, Colors.Black);
+                        LogUpdate("(" + _count + ") load related " + href, Colors.MidnightBlue);
 
                         element.Click();
                         return true;
@@ -274,7 +281,7 @@ namespace Binginator.Models {
 
             Launch(false, "https://www.bing.com/rewards/dashboard");
 
-            LogUpdate("checking for offers", Colors.Blue);
+            LogUpdate("Checking for offers...", Colors.Blue);
             await Task.Delay(1000);
 
             if (_getElement(By.XPath("//div[@class='simpleSignIn']")) != null) {
@@ -282,12 +289,15 @@ namespace Binginator.Models {
                 _cancel = true;
             }
             else {
+                _neededMobileSearches = _getCreditsFor("Mobile", 10) * 2;
+                _neededDesktopSearches = _getCreditsFor("PC", 15) * 2;
+
                 List<string> offers = new List<string>();
 
                 while (true) {
                     IWebElement element = _getElement(By.XPath("//div[@class='dashboard-title'][text()='Earn and explore']/following-sibling::ul//div[contains(concat(' ',@class,' '),' open-check ')]/ancestor::a[@href[contains(.,'/rewardsapp/redirect?')]]"));
                     if (element == null) {
-                        LogUpdate("unable to find any", Colors.Red);
+                        LogUpdate("couldnt find any offers", Colors.Salmon);
                         break;
                     }
                     else {
@@ -297,7 +307,7 @@ namespace Binginator.Models {
 
                         if (!offers.Contains(title.Text)) {
                             offers.Add(title.Text);
-                            LogUpdate("load offer " + title.Text, Colors.Black);
+                            LogUpdate("load offer " + title.Text, Colors.MidnightBlue);
 
                             _builder.KeyDown(Keys.Control).Click(element).KeyUp(Keys.Control).Build().Perform();
                         }
@@ -312,8 +322,26 @@ namespace Binginator.Models {
             Quit();
         }
 
+        private uint _getCreditsFor(string type, uint def) {
+            uint result = def;
+
+            IWebElement element = _getElement(By.XPath("//div[@class='dashboard-title'][text()='Every day ways to earn']/following-sibling::ul//span[@class='title'][text()='" + type + " search']/../following-sibling::div[@class='progress']"));
+            if (element != null) {
+                Match match = Regex.Match(element.Text, @"^(?:(\d+) of )?(\d+) credits$", RegexOptions.Compiled);
+                if (match.Success) {
+                    if (match.Groups[1].Value == String.Empty)
+                        return 0;
+
+                    return uint.Parse(match.Groups[2].Value) - uint.Parse(match.Groups[1].Value);
+                }
+            }
+
+            LogUpdate("couldnt find the credits required for " + type, Colors.OrangeRed);
+            return def;
+        }
+
         private IWebElement _getElement(By by, IWebElement context = null) {
-            LogUpdate("_getElement " + by, Colors.Purple);
+            LogUpdate("_getElement " + by, Colors.Orchid);
             try {
                 if (context != null)
                     return context.FindElement(by);
@@ -329,7 +357,7 @@ namespace Binginator.Models {
         }
 
         private ReadOnlyCollection<IWebElement> _getElements(By by, IWebElement context = null) {
-            LogUpdate("_getElements " + by, Colors.Purple);
+            LogUpdate("_getElements " + by, Colors.Orchid);
             if (context != null)
                 return context.FindElements(by);
 

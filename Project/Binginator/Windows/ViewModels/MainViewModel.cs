@@ -12,8 +12,6 @@ namespace Binginator.Windows.ViewModels {
     public class MainViewModel {
         private MainModel _model;
         public event EventHandler<LogUpdatedEventArgs> LogUpdated;
-        public uint MobileCredits { get; set; }
-        public uint DesktopCredits { get; set; }
         public uint ScheduleStart { get; set; }
         public uint ScheduleRandom { get; set; }
 
@@ -24,10 +22,6 @@ namespace Binginator.Windows.ViewModels {
 
             ScheduleStart = 13;
             ScheduleRandom = 2;
-
-            MobileCredits = _getSearchArgument("mobile", 10);
-
-            DesktopCredits = _getSearchArgument("desktop", 15);
 
             if (App.Arguments.ContainsKey("search"))
                 SearchCommand.Execute(null);
@@ -91,11 +85,11 @@ namespace Binginator.Windows.ViewModels {
                 return _ResetProfileCommand ?? (
                     _ResetProfileCommand = new RelayCommand(
                         () => {
-                            //LogUpdate("ResetProfileCommand", Colors.DarkSlateGray);
+                            LogUpdate("ResetProfileCommand", Colors.DarkSlateGray);
 
                             _model.ResetProfile();
                         },
-                        () => { return Directory.Exists("profile"); }
+                        () => { return Directory.Exists(Path.Combine(App.Folder, "profile")); }
                     ));
             }
         }
@@ -152,7 +146,7 @@ namespace Binginator.Windows.ViewModels {
 
                             td.Actions.Add(new ExecAction(
                                     '"' + Path.Combine(App.Folder, AppDomain.CurrentDomain.FriendlyName) + '"',
-                                    String.Format("--search --mobile={0} --desktop={1} ", MobileCredits, DesktopCredits),
+                                    "--search",
                                     App.Folder
                                 ));
 
@@ -171,14 +165,6 @@ namespace Binginator.Windows.ViewModels {
         public void LogUpdate(string data, Color color, bool inline = false) {
             if (LogUpdated != null)
                 App.InvokeIfRequired(() => LogUpdated(this, new LogUpdatedEventArgs(data, color, inline)));
-        }
-
-        private uint _getSearchArgument(string type, uint def) {
-            uint value;
-            if (App.Arguments.ContainsKey(type) && uint.TryParse(App.Arguments[type], out value))
-                return value;
-
-            return def;
         }
     }
 }
