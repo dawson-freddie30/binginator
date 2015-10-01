@@ -108,8 +108,8 @@ namespace Binginator.Models {
                     var windows = _driver.WindowHandles;
                     if (windows.Count > 0) {
                         LogUpdate("(close opened tabs)", Colors.SlateBlue);
-                        for (int i = 0; i < windows.Count; i++) {
-                            _driver.SwitchTo().Window(windows[i]);
+                        foreach (string window in windows) {
+                            _driver.SwitchTo().Window(window);
                             _driver.Close();
                         }
                     }
@@ -133,17 +133,20 @@ namespace Binginator.Models {
                 return;
 
             Launch(true);
+            string mainTab = _driver.CurrentWindowHandle;
 
-            await _search(
-                "//div[@id='hc_popnow']//a[@href[contains(.,'&FORM=HPNN01')]]",
-                "//div[@id='elst']//h2/a",
-                "//ol[@id='b_results']//div[@class='b_rs']/h2[text()='Related searches']/following-sibling::*//a[@href[contains(.,'&FORM=QSRE')]]"
-                );
+            do {
+                await _search(
+                     "//div[@id='hc_popnow']//a[@href[contains(.,'&FORM=HPNN01')]]",
+                     "//div[@id='elst']//h2/a",
+                     "//ol[@id='b_results']//div[@class='b_rs']/h2[text()='Related searches']/following-sibling::*//a[@href[contains(.,'&FORM=QSRE')]]"
+                     );
+
+                await _checkCredits(mainTab, true);
+            } while (_neededSearches > 0);
 
             Quit();
         }
-
-
 
         private async Task _searchDesktop() {
             if (_cancel)
@@ -155,14 +158,35 @@ namespace Binginator.Models {
                 return;
 
             Launch(false);
+            string mainTab = _driver.CurrentWindowHandle;
 
-            await _search(
-                "//ul[@id='crs_pane']//a[@href[contains(.,'&FORM=HPNN01')]]",
-                "//div[contains(concat(' ',@class,' '),' mcd ')]//h4/a",
-                "//ol[@id='b_context']//h2[text()='Related searches']/following-sibling::ul//a[@href[contains(.,'&FORM=R5FD')]]"
-                );
+            do {
+                await _search(
+                    "//ul[@id='crs_pane']//a[@href[contains(.,'&FORM=HPNN01')]]",
+                    "//div[contains(concat(' ',@class,' '),' mcd ')]//h4/a",
+                    "//ol[@id='b_context']//h2[text()='Related searches']/following-sibling::ul//a[@href[contains(.,'&FORM=R5FD')]]"
+                    );
+
+                await _checkCredits(mainTab, false);
+            } while (_neededSearches > 0);
 
             Quit();
+        }
+
+        private async Task _checkCredits(string mainTab, bool mobile) {
+            LogUpdate("checking credit count", Colors.RoyalBlue);
+
+            _driver.SwitchTo().Window(mainTab);
+            _driver.Navigate().GoToUrl("https://www.bing.com/rewards/dashboard");
+            await Task.Delay(1000);
+
+            if (mobile)
+                _neededSearches = _getCreditsOnMobile() * 2;
+            else
+                _neededSearches = _getCreditsFor("PC") * 2;
+
+            _driver.Navigate().Back();
+            await Task.Delay(250);
         }
 
         private async Task _search(string news, string random, string related) {
@@ -240,7 +264,6 @@ namespace Binginator.Models {
             }
         }
 
-
         private bool _openRandom(string xpath) {
             var elements = _getElements(By.XPath(xpath));
             if (elements.Count == 0)
@@ -289,8 +312,9 @@ namespace Binginator.Models {
                 _cancel = true;
             }
             else {
-                _neededMobileSearches = _getCreditsFor("Mobile", 10) * 2;
-                _neededDesktopSearches = _getCreditsFor("PC", 15) * 2;
+                _neededSearches = 0;
+                _neededMobileSearches = _getCreditsFor("Mobile") * 2;
+                _neededDesktopSearches = _getCreditsFor("PC") * 2;
 
                 List<string> offers = new List<string>();
 
@@ -322,9 +346,7 @@ namespace Binginator.Models {
             Quit();
         }
 
-        private uint _getCreditsFor(string type, uint def) {
-            uint result = def;
-
+        private uint _getCreditsFor(string type) {
             IWebElement element = _getElement(By.XPath("//div[@class='dashboard-title'][text()='Every day ways to earn']/following-sibling::ul//span[@class='title'][text()='" + type + " search']/../following-sibling::div[@class='progress']"));
             if (element != null) {
                 Match match = Regex.Match(element.Text, @"^(?:(\d+) of )?(\d+) credits$", RegexOptions.Compiled);
@@ -332,12 +354,27 @@ namespace Binginator.Models {
                     if (match.Groups[1].Value == String.Empty)
                         return 0;
 
-                    return uint.Parse(match.Groups[2].Value) - uint.Parse(match.Groups[1].Value);
+                    return (_neededSearches / 2) + uint.Parse(match.Groups[2].Value) - uint.Parse(match.Groups[1].Value);
                 }
             }
 
             LogUpdate("couldnt find the credits required for " + type, Colors.OrangeRed);
-            return def;
+            return 0;
+        }
+
+        private uint _getCreditsOnMobile() {
+            var elements = _getElements(By.XPath("//div[@id='credit-progress']//div[@class='description'][text()='Mobile search']/preceding-sibling::span[@class='primary' | @class='secondary']"));
+            if (elements.Count == 2 && elements[0].GetAttribute("class") == "primary")
+                try {
+                    if (elements[0].Text == elements[1].Text.Substring(1))
+                        return 0;
+
+                    return (_neededSearches / 2) + uint.Parse(elements[1].Text.Substring(1)) - uint.Parse(elements[0].Text);
+                }
+                catch (Exception) { }
+
+            LogUpdate("couldnt find the credits required for mobile", Colors.OrangeRed);
+            return 0;
         }
 
         private IWebElement _getElement(By by, IWebElement context = null) {
