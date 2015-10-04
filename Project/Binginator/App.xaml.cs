@@ -17,8 +17,11 @@ namespace Binginator {
     public partial class App : Application {
         public static string Folder = AppDomain.CurrentDomain.BaseDirectory;
         public static Dictionary<string, string> Arguments;
+        public static string Log = String.Format("log_{0}.txt", DateTime.Now.ToString("yyyy-MM-dd"));
 
         private void _Startup(object sender, StartupEventArgs e) {
+            _deleteOldLogs();
+
             if (!File.Exists(Path.Combine(App.Folder, "chromedriver.exe")))
                 new MsgWindow("Unable to locate required files. Reinstall this program.").ShowDialog();
             else {
@@ -92,6 +95,24 @@ namespace Binginator {
             }
 
             return sb.ToString();
+        }
+
+        public static void WriteLog(string contents) {
+            try {
+                File.AppendAllText(Log, contents);
+            }
+            catch (Exception) { }
+        }
+
+        private void _deleteOldLogs() {
+            try {
+                FileInfo[] files = new DirectoryInfo(App.Folder).GetFiles("log_*.txt");
+                Array.Sort(files, (f1, f2) => f1.Name.CompareTo(f2.Name));
+
+                for (int i = 0; i < files.Length - 8; i++)
+                    files[i].Delete();
+            }
+            catch (Exception) { }
         }
 
         private Assembly _AssemblyResolve(Object sender, ResolveEventArgs args) {

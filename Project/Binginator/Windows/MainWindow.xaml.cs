@@ -43,6 +43,12 @@ namespace Binginator.Windows {
         }
 
         private void Window_Closed(object sender, System.EventArgs e) {
+            string text = new TextRange(RichTextBoxLog.Document.ContentStart, RichTextBoxLog.Document.ContentEnd).Text;
+            if (text != "")
+                App.WriteLog(text);
+
+            _viewModel.LogUpdated -= DataContext_LogUpdated;
+
             _viewModel.Quit();
         }
     }

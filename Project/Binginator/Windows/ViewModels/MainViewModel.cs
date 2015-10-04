@@ -163,8 +163,12 @@ namespace Binginator.Windows.ViewModels {
         }
 
         public void LogUpdate(string data, Color color, bool inline = false) {
+            data = String.Format("{0} {1}", DateTime.Now.ToString("HH:mm:ss.fff"), data);
+
             if (LogUpdated != null)
                 App.InvokeIfRequired(() => LogUpdated(this, new LogUpdatedEventArgs(data, color, inline)));
+            else
+                App.WriteLog(data + Environment.NewLine);
         }
     }
 }

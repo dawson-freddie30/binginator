@@ -307,6 +307,8 @@ namespace Binginator.Models {
             LogUpdate("Checking for offers...", Colors.Blue);
             await Task.Delay(1000);
 
+            ((IJavaScriptExecutor)_driver).ExecuteScript("document.cookie = '_splsh=d=1;domain=bing.com;expires=' + new Date((new Date).getTime() + 630720000000).toGMTString() + ';path=/'");
+
             if (_getElement(By.XPath("//div[@class='simpleSignIn']")) != null) {
                 LogUpdate("SIGN IN TO BING", Colors.Red);
                 _cancel = true;
