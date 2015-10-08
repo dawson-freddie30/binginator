@@ -174,6 +174,9 @@ namespace Binginator.Models {
         }
 
         private async Task _checkCredits(string mainTab, bool mobile) {
+            if (_neededSearches == 0)
+                return;
+
             LogUpdate("checking credit count", Colors.RoyalBlue);
 
             _driver.SwitchTo().Window(mainTab);
@@ -207,6 +210,7 @@ namespace Binginator.Models {
                     var windows = _driver.WindowHandles;
                     if (windows.Count == 1) {
                         LogUpdate("ran out of tabs to search with", Colors.Red);
+                        _neededSearches = 0;
                         break;
                     }
 
