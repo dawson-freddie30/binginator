@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Principal;
 using System.Windows.Media;
@@ -31,16 +32,16 @@ namespace Binginator.Windows.ViewModels {
             _model.Quit(true);
         }
 
-        private RelayCommand _LaunchMobileCommand;
-        public RelayCommand LaunchMobileCommand {
+        private RelayCommand _SearchCommand;
+        public RelayCommand SearchCommand {
             get {
-                return _LaunchMobileCommand ?? (
-                    _LaunchMobileCommand = new RelayCommand(
+                return _SearchCommand ?? (
+                    _SearchCommand = new RelayCommand(
                         () => {
-                            //LogUpdate("LaunchMobileCommand", Colors.DarkSlateGray);
+                            //LogUpdate("SearchCommand", Colors.DarkSlateGray);
 
                             var bw = new BackgroundWorker();
-                            bw.DoWork += (sender, e) => { _model.Launch(true); };
+                            bw.DoWork += (sender, e) => { _model.Search(); };
                             bw.RunWorkerAsync();
                         }
                     ));
@@ -63,16 +64,16 @@ namespace Binginator.Windows.ViewModels {
             }
         }
 
-        private RelayCommand _SearchCommand;
-        public RelayCommand SearchCommand {
+        private RelayCommand _LaunchMobileCommand;
+        public RelayCommand LaunchMobileCommand {
             get {
-                return _SearchCommand ?? (
-                    _SearchCommand = new RelayCommand(
+                return _LaunchMobileCommand ?? (
+                    _LaunchMobileCommand = new RelayCommand(
                         () => {
-                            //LogUpdate("SearchCommand", Colors.DarkSlateGray);
+                            //LogUpdate("LaunchMobileCommand", Colors.DarkSlateGray);
 
                             var bw = new BackgroundWorker();
-                            bw.DoWork += (sender, e) => { _model.Search(); };
+                            bw.DoWork += (sender, e) => { _model.Launch(true); };
                             bw.RunWorkerAsync();
                         }
                     ));
@@ -94,20 +95,50 @@ namespace Binginator.Windows.ViewModels {
             }
         }
 
+        private RelayCommand _OpenFolderCommand;
+        public RelayCommand OpenFolderCommand {
+            get {
+                return _OpenFolderCommand ?? (
+                    _OpenFolderCommand = new RelayCommand(
+                        () => {
+                            //LogUpdate("OpenFolderCommand", Colors.DarkSlateGray);
+
+                            Process.Start(new ProcessStartInfo {
+                                FileName = App.Folder,
+                                UseShellExecute = true,
+                                Verb = "open"
+                            });
+                        }
+                    ));
+            }
+        }
+
         private bool? _TaskSchedulerChecked;
         public bool TaskSchedulerChecked {
             get {
                 if (_TaskSchedulerChecked == null) {
                     LogUpdate("checking for scheduled task", Colors.LightGray);
+                    _TaskSchedulerChecked = false;
 
                     try {
                         using (TaskService ts = new TaskService()) {
-                            _TaskSchedulerChecked = ts.FindTask("binginator_" + WindowsIdentity.GetCurrent().Name.Replace(@"\", "-")) != null;
+                            bool v2 = ts.HighestSupportedVersion >= new Version(1, 2);
+
+                            Task task = ts.FindTask("binginator_" + WindowsIdentity.GetCurrent().Name.Replace(@"\", "-"));
+                            if (task != null && task.Definition.Triggers.Count == 1) {
+                                DailyTrigger trigger = task.Definition.Triggers[0] as DailyTrigger;
+                                if (trigger != null) {
+                                    ScheduleStart = (uint)trigger.StartBoundary.Hour;
+
+                                    if (v2)
+                                        ScheduleRandom = (uint)trigger.RandomDelay.Hours;
+
+                                    _TaskSchedulerChecked = true;
+                                }
+                            }
                         }
                     }
-                    catch (Exception) {
-                        _TaskSchedulerChecked = false;
-                    }
+                    catch (Exception) { }
                 }
 
                 return (bool)_TaskSchedulerChecked;

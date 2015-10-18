@@ -137,9 +137,9 @@ namespace Binginator.Models {
 
             do {
                 await _search(
-                     "//div[@id='hc_popnow']//a[@href[contains(.,'&FORM=HPNN01')]]",
+                     "//div[@id='hc_popnow']//a[contains(@href,'&FORM=HPNN01')]",
                      "//div[@id='elst']//h2/a",
-                     "//ol[@id='b_results']//div[@class='b_rs']/h2[text()='Related searches']/following-sibling::*//a[@href[contains(.,'&FORM=QSRE')]]"
+                     "//ol[@id='b_results']//div[@class='b_rs']/h2[text()='Related searches']/following-sibling::*//a[contains(@href,'&FORM=QSRE')]"
                      );
 
                 await _checkCredits(mainTab, true);
@@ -162,9 +162,9 @@ namespace Binginator.Models {
 
             do {
                 await _search(
-                    "//ul[@id='crs_pane']//a[@href[contains(.,'&FORM=HPNN01')]]",
+                    "//ul[@id='crs_pane']//a[contains(@href,'&FORM=HPNN01')]",
                     "//div[contains(concat(' ',@class,' '),' mcd ')]//h4/a",
-                    "//ol[@id='b_context']//h2[text()='Related searches']/following-sibling::ul//a[@href[contains(.,'&FORM=R5FD')]]"
+                    "//ol[@id='b_context']//h2[text()='Related searches']/following-sibling::ul//a[contains(@href,'&FORM=R5FD')]"
                     );
 
                 await _checkCredits(mainTab, false);
@@ -325,7 +325,7 @@ namespace Binginator.Models {
                 List<string> offers = new List<string>();
 
                 while (true) {
-                    IWebElement element = _getElement(By.XPath("//div[@class='dashboard-title'][text()='Earn and explore']/following-sibling::ul//div[contains(concat(' ',@class,' '),' open-check ')]/ancestor::a[@href[contains(.,'/rewardsapp/redirect?')]]"));
+                    IWebElement element = _getElement(By.XPath("//div[@class='dashboard-title'][text()='Earn and explore']/following-sibling::ul//div[contains(concat(' ',@class,' '),' open-check ')]/ancestor::a[starts-with(@href,'/rewardsapp/redirect?url=http') or starts-with(@href,'/rewardsapp/redirect?url=%2f')]"));
                     if (element == null) {
                         LogUpdate("couldnt find any offers", Colors.Salmon);
                         break;
@@ -369,15 +369,27 @@ namespace Binginator.Models {
         }
 
         private uint _getCreditsOnMobile() {
-            var elements = _getElements(By.XPath("//div[@id='credit-progress']//div[@class='description'][text()='Mobile search']/preceding-sibling::span[@class='primary' | @class='secondary']"));
-            if (elements.Count == 2 && elements[0].GetAttribute("class") == "primary")
-                try {
-                    if (elements[0].Text == elements[1].Text.Substring(1))
-                        return 0;
+            var elements = _getElements(By.XPath("//div[@id='credit-progress']//div[@class='description'][text()='Mobile search']/preceding-sibling::span[@class='primary' or @class='secondary']"));
+            if (elements.Count == 2) {
+                int pIdx = 0;
+                int sIdx = 1;
 
-                    return (_neededSearches / 2) + uint.Parse(elements[1].Text.Substring(1)) - uint.Parse(elements[0].Text);
+                if (elements[0].GetAttribute("class") != "primary") {
+                    pIdx = 1;
+                    sIdx = 0;
+                }
+
+                string primary = elements[pIdx].Text;
+                string secondary = elements[sIdx].Text.Substring(1);
+
+                if (primary.Equals(secondary))
+                    return 0;
+
+                try {
+                    return (_neededSearches / 2) + uint.Parse(secondary) - uint.Parse(primary);
                 }
                 catch (Exception) { }
+            }
 
             LogUpdate("couldnt find the credits required for mobile", Colors.OrangeRed);
             return 0;

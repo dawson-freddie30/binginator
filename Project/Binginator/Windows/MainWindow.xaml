@@ -19,6 +19,9 @@
         <TextBlock HorizontalAlignment="Left" Margin="328,72,0,0" VerticalAlignment="Top" FontStyle="Italic">
             <Hyperlink Command="{Binding ResetProfileCommand}">Reset Chrome Profile</Hyperlink>
         </TextBlock>
+        <TextBlock HorizontalAlignment="Left" Margin="479,72,0,0" VerticalAlignment="Top">
+            <Hyperlink Command="{Binding OpenFolderCommand}">Open Folder</Hyperlink>
+        </TextBlock>
 
         <TextBlock HorizontalAlignment="Left" Margin="633,10,0,0" VerticalAlignment="Top" Text="Automatically search:" />
         <CheckBox HorizontalAlignment="Left" Margin="638,31,0,0" VerticalAlignment="Top" IsChecked="{Binding TaskSchedulerChecked}">
