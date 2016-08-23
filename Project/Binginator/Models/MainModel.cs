@@ -45,15 +45,21 @@ namespace Binginator.Models {
             if (mobile)
                 options.AddAdditionalCapability("mobileEmulation", new Dictionary<string, string> { { "deviceName", "Google Nexus 5" } });
 
-            _driver = new ChromeDriver(service, options);
-            _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(3));
+            try {
+                _driver = new ChromeDriver(service, options);
+                _driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(3));
 
-            _builder = new Actions(_driver);
+                _builder = new Actions(_driver);
 
-            LogUpdate("Launching Chrome " + (mobile ? "Mobile" : "Desktop"), Colors.CadetBlue);
+                LogUpdate("Launching Chrome " + (mobile ? "Mobile" : "Desktop"), Colors.CadetBlue);
 
-            if (url != null)
-                _driver.Navigate().GoToUrl(url);
+                if (url != null)
+                    _driver.Navigate().GoToUrl(url);
+            }
+            catch (Exception ex) {
+                LogUpdate("Error Launching Chrome " + (mobile ? "Mobile" : "Desktop") + "\r\n" + ex.Message, Colors.Red);
+                service.Dispose();
+            }
         }
 
 
@@ -133,6 +139,11 @@ namespace Binginator.Models {
                 return;
 
             Launch(true);
+            if (_driver == null) {
+                Quit(true);
+                return;
+            }
+
             string mainTab = _driver.CurrentWindowHandle;
 
             do {
@@ -158,6 +169,11 @@ namespace Binginator.Models {
                 return;
 
             Launch(false);
+            if (_driver == null) {
+                Quit(true);
+                return;
+            }
+
             string mainTab = _driver.CurrentWindowHandle;
 
             do {
@@ -307,6 +323,10 @@ namespace Binginator.Models {
                 return;
 
             Launch(false, "https://www.bing.com/rewards/dashboard");
+            if (_driver == null) {
+                Quit(true);
+                return;
+            }
 
             LogUpdate("Checking for offers...", Colors.Blue);
             await Task.Delay(1000);
