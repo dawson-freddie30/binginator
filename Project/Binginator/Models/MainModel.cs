@@ -43,7 +43,7 @@ namespace Binginator.Models {
             options.AddArgument("user-data-dir=" + App.Folder + "profile");
 
             if (mobile)
-                options.AddAdditionalCapability("mobileEmulation", new Dictionary<string, string> { { "deviceName", "Google Nexus 5" } });
+                options.EnableMobileEmulation("Google Nexus 5");
 
             try {
                 _driver = new ChromeDriver(service, options);
